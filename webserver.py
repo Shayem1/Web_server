@@ -46,7 +46,6 @@ while True:  #infinite loop
         for i in range(0, len(outputdata)): #checks the length of the file and loops the code below to the corresponding length
             connectionSocket.send(outputdata[i].encode()) #send line by line data encoded to the page
         
-        """connectionSocket.send("\r\n".encode()) #not too sure why chatgpt wrote this but it sends a new blank line and moves the cursor to the 2nd last line"""
         connectionSocket.close() #closes connection after we are done
 
     except IOError:
