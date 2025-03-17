@@ -8,6 +8,7 @@ import time
 import sys
 
 
+# closes the server
 def close_server():
     global serverSocket
     try:
@@ -16,17 +17,20 @@ def close_server():
         pass  # Ignore if already closed
 
 
+
+# Runs the actual server on a seperate thread for multitasking
 def handle_client(connectionSocket, addr):
-    global logged_request
+    global logged_request #flag variable so the server knows new connections
+
     try:
         message = connectionSocket.recv(1024).decode()  # Receive the HTTP request
         if not message:
             connectionSocket.close()
             return  # No message, return
 
-        # Print the request headers (only once)
+        # Print the request headers (only once, and for new connections)
         if not logged_request:
-            print(f"Received request from {addr}:")
+            print(f"Received request from {addr}:") #sends to terminal which is redirected to GUI
             print(message)
             redirect_output(f"Received request from {addr}:\n{message}\n")  # Log to textbox
             logged_request = True  # Prevent logging multiple times
@@ -34,26 +38,27 @@ def handle_client(connectionSocket, addr):
         # Process the requested file
         filename = message.split()[1]
         try:
-            with open(filename[1:], 'r') as f:
+            with open("Webpages/"+filename[1:], 'r') as f:
                 outputdata = f.read()
 
-            responseHeader = "HTTP/1.1 200 OK\r\n\r\n"
-            connectionSocket.send(responseHeader.encode())
+            responseHeader = "HTTP/1.1 200 OK\r\n\r\n"      #document sent correctly
+            connectionSocket.send(responseHeader.encode())  #sends encoded response header
 
             for char in outputdata:
-                connectionSocket.send(char.encode())  # Send file content
+                connectionSocket.send(char.encode())  # Send file content to webpage
 
         except IOError:
-            # Handle file not found
+            # Handle file not found and sends encoded server response to webpage
             responseHeader = "HTTP/1.1 404 Not Found\r\n\r\n"
             responseBody = "<html><head></head><body><h1>404 Not Found</h1></body></html>"
             connectionSocket.send(responseHeader.encode())
             connectionSocket.send(responseBody.encode())
 
+    #displays any errors to terminal which gets redirected to GUI
     except OSError as e:
-        print(f"Error with client {addr}: {e}")
+        print(f"Error with client {addr}: {e}")  #curly brackets allows variables inbedded in strings
     finally:
-        connectionSocket.close()  # Close connection after handling the client
+        connectionSocket.close()  # Close connection after handling the client, otherwise connections refuse
 
 # Server update function that accepts and handles multiple connections
 def server_update():
@@ -67,6 +72,7 @@ def server_update():
             # Start a new thread to handle the client
             threading.Thread(target=handle_client, args=(connectionSocket, addr), daemon=True).start()
 
+        #displays any errors to terminal
         except Exception as e:
             print(f"Error accepting new connection: {e}")
             break
@@ -78,10 +84,10 @@ def start_server():
 
     serverPort = 4305  # Port number
     serverSocket.bind(('localhost', serverPort))
-    serverSocket.listen(number_of_clients)  # Allow up to 5 clients to queue up
+    serverSocket.listen(number_of_clients)  # Allow up to {x} clients to queue up
 
     print(f'Server is ready and listening on port {serverPort}...')
-    # Start accepting and handling connections
+    # Start accepting and handling connections with new threads
     threading.Thread(target=server_update, daemon=True).start()
 
 
@@ -96,21 +102,25 @@ def switch_toggle():
         close_server()  # Close the server
 
 
+#sends terminal data to GUI
 def redirect_output(text):
-    textbox.configure(state=NORMAL)
+    textbox.configure(state=NORMAL) #the textbox is momentarily active for system to write
     textbox.insert("end", text)  # Insert message to the end of the textbox
     textbox.yview("end")  # Auto-scroll to the latest message
-    textbox.configure(state=DISABLED)
+    textbox.configure(state=DISABLED) #otherwise, the textbox is closed from the user
 
+#adds time to the program
 def update_time():
     current_time = time.strftime("%H:%M:%S")  # Get current time
     clock_label.configure(text=current_time)  # Update label
     GUI.after(1000, update_time)  # Call function again after 1 sec
 
+#automatically opens up the correct webpage, you can edit the link to show 404
 def open_webpage():
     driver = webdriver.Chrome()
     driver.get("http://localhost:4305/sev.html")
 
+#runs functions with threads to allow main program to not freeze
 def thread_offload():
     threading.Thread(target=open_webpage, daemon=True).start()
 
@@ -126,6 +136,8 @@ GUI.configure(fg_color="black")
 
 # Create a variable to track switch state
 switch_var = customtkinter.StringVar(value="off")
+
+#enables and disables the server
 switch = customtkinter.CTkSwitch(GUI, text="Server Switch", command=switch_toggle, variable=switch_var, onvalue="on",
                                  offvalue="off", font=("Arial", 20), progress_color="red", fg_color="red", corner_radius=20, border_width=0)
 switch.place(relx=0.83, rely=0.853, anchor=SE)
@@ -134,23 +146,26 @@ switch.place(relx=0.83, rely=0.853, anchor=SE)
 frame = customtkinter.CTkFrame(GUI, corner_radius=40, fg_color="black")
 frame.place(relx=0.5, rely=0.05, relwidth=0.9, relheight=0.7, anchor=N)
 
-# Create the scrollable Textbox
+# Create the scrollable Textbox for terminal output
 textbox = customtkinter.CTkTextbox(frame, wrap="word", height=10, state=DISABLED)
 textbox.pack(side="left", fill="both", expand=True)
 
-# Clock label
+#the time text label configuration
 clock_label = customtkinter.CTkLabel(GUI, text="", font=("Arial", 20))
 clock_label.place(relx=0.15, rely=0.86, anchor=SW)
 update_time()  # Start updating the time
 
+
+
 #setting up number of connections
 # List of values from 1 to 8
 combo_values = [str(i) for i in range(1, 9)]
+
 # Create the ComboBox widget with the values from 1 to 8
 combo_box = customtkinter.CTkComboBox(GUI, values=combo_values, width=50)
 combo_box.place(relx=0.84, rely=0.953, anchor=SE)
 combo_box.set("1")  # Set the default number of connections to 1
-number_of_clients = int(combo_box.get())
+number_of_clients = int(combo_box.get()) #retrieves an the selected value and converts to integer
 
 connections_label = customtkinter.CTkLabel(GUI, text = "Connections", font=("Arial", 20))
 connections_label.place(relx=0.69, rely=0.953, anchor=SE)
