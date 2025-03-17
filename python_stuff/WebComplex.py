@@ -80,10 +80,10 @@ def server_update():
 # Function to start the server
 def start_server():
     global serverSocket, number_of_clients
+    print("This server runs on localHost and will not allow other devices on the netowrk to connect\n")
     serverSocket = socket(AF_INET, SOCK_STREAM)
-
     serverPort = 4305  # Port number
-    serverSocket.bind(('localhost', serverPort))
+    serverSocket.bind(('localhost', serverPort)) #change to ("0.0.0.0", serverPort) for all connections (firewall/security threat)
     serverSocket.listen(number_of_clients)  # Allow up to {x} clients to queue up
 
     print(f'Server is ready and listening on port {serverPort}...')
