@@ -83,7 +83,23 @@ def start_server():
     print("This server runs on localHost and will not allow other devices on the netowrk to connect\n")
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverPort = 4305  # Port number
-    serverSocket.bind(('localhost', serverPort)) #change to ("0.0.0.0", serverPort) for all connections (firewall/security threat)
+    serverSocket.bind(('localhost', serverPort)) 
+    
+    #change to ("0.0.0.0", serverPort) for all connections (firewall/security threat)
+    #you will also need to enable port forwarding using your router and public ip adress (not private ip adress asigned to your pc)
+    #you can also port forward using 3rd party applications to take care of that
+    #port forwarding involves security risks as it allows anyone to have access (if shared)
+    #windows security or your router may block port forwarding
+    #if enabled anyway, it will allow others to connect to your webserver as long as it is listening for clients
+    #this program allows upto 8 configurable clients (simple code only allows 1)
+    #allowing multiple clients to access the webpage simultaneously can cause performance issues since each client 
+    #recieves a single thread to manage their requests, this is done for improved server performance rather than 
+    #client side reliability as managing 50 clients requires 51 threads + 4 to run host OS. 8 clients is a soft limit
+    #that can be changed by altering the program code near the end to allow as many clients as you want (not recomended)
+    #Also note that connecting more clients than what you select will overload the server and close all connections
+    #until all are close or when server is restarted or if the limit is increased
+
+
     serverSocket.listen(number_of_clients)  # Allow up to {x} clients to queue up
 
     print(f'Server is ready and listening on port {serverPort}...')
@@ -116,6 +132,7 @@ def update_time():
     GUI.after(1000, update_time)  # Call function again after 1 sec
 
 #automatically opens up the correct webpage, you can edit the link to show 404
+#if localHost is changed, the weblink needs to be altered. Likewise if HTML file is changed or port.
 def open_webpage():
     driver = webdriver.Chrome()
     driver.get("http://localhost:4305/sev.html")
